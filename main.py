@@ -9,7 +9,7 @@ ind_par = 100 #paramert indykatora
 ind_par_1=ind_par-1
 #nauka_koniec='2015-03-27'wyznacz końcowy zakres przedziału pierwszej nauki zarządzania majątkiem
 nauka_koniec='1990-12-31'
-wspolczynnik = 0.1 #parametr do obnizenia zaangazowania w dzwignie
+wspolczynnik = 1 #parametr do obnizenia zaangazowania w dzwignie
 
 data = pd.ExcelFile('./input/EM.xlsx').parse('Arkusz1')
 
@@ -23,7 +23,6 @@ data['Indicator']=data['Close'].rolling(ind_par).mean()
 #data['Data'] = datetime.datetime.strptime(data['Data'], format).date()
 
 data['Data'] = data['Data'].dt.strftime('%Y-%m-%d')
-print(data['Data'][0])
 
 #Inicjuj kolumny informujące o statuie transakcji
 data['Kupuj'] = np.nan
@@ -205,7 +204,10 @@ for i in range(test_start,trans_end):
 #Inicjuj kolumny informujące o wynikach poszczególnych metod
 data['BH'] = np.nan
 data['Vince'] = np.nan
-#data['Vince-BH'] = np.nan
+data['Vince-BH'] = np.nan
+
+#Zainicjuj zmienną badającą, czy doszło do bankructa
+zonk = 'nie'
 
 #Wypełnij wiersze informujące o wyniku metody kupuj i trzymaj, tadingu i Vince'a
 for i in range(test_init,trans_end):
@@ -216,57 +218,26 @@ for i in range(test_init,trans_end):
         if data['Sprzedaj'][i] == 1:
             #Badam wyniki buy and hold
             data['BH'][i] = np.log(1+data['Zrealizowany zysk'][i]) * 100
-
+            #Badam wyniki Vince'a i to czy doszło do bankructwa
             if data['Vince_zysk'][i] <= -1:
                 data['Vince'][i] = -10000000
+                zonk = 'tak'
             else:
                 data['Vince'][i] = np.log(1+data['Vince_zysk'][i]) * 100
 
-
-y = pd.DataFrame(data)
-y.to_excel("output.xlsx")
-
-
-"""
-        #Badam wyniki tradingu i Vonce'a
-        if data['Trzymaj'][i] == 1:
-            data['Trading'][i] = data['BH'][i]
-            data['Vince'][i] = np.log((data['Close'][i]+data['Mnożnik'][i]*(data['Close'][i]-data['Close'][prev])-\
-            (data['Mnożnik'][i]-1)*data['Rf'][i]/260*data['Close'][i])/data['Close'][i]) * 100
-        else:
-            data['Trading'][i] = np.log(1+data['Rf'][i]/260)*100
-            data['Vince'][i] = data['Trading'][i]
-
-        
-        data['TR-BH'][i] = data['Trading'][i] - data['BH'][i]
         data['Vince-BH'][i] = data['Vince'][i] - data['BH'][i]
-        data['Vince-TR'][i] = data['Vince'][i] - data['Trading'][i]
-
-
-
-
 
 #Policz jaki procent obserwacji kwalifikuje sie do stosowania dzwigni
-procent_EX_dodtni = np.count_nonzero(~np.isnan(data['f_opt']))/(trans_end-test_init) * 100
-
-#Wyznacz zmienne porownujace trading z buy and hold
-Srednia_TR_BH = np.nanmean(data['TR-BH'])
-Wariancja_TR_BH = np.nanvar(data['TR-BH'])
-Obserwacje = np.count_nonzero(~np.isnan(data['f_opt']))
-t_student_TR_BH = Srednia_TR_BH/np.sqrt(Wariancja_TR_BH/Obserwacje)
-pvalue_TR_BH = 1-norm.cdf(t_student_TR_BH)
+procent_EX_dodatni = np.count_nonzero(~np.isnan(data['f_opt']))/(trans_end-test_init) * 100
+#Policz średni zysk Vince'a
+sredni_Vince = np.nanmean(data['Vince'])
 
 #Wyznacz zmienne porownujace Vince'a z buy and hold
 Srednia_Vince_BH = np.nanmean(data['Vince-BH'])
 Wariancja_Vince_BH = np.nanvar(data['Vince-BH'])
+Obserwacje = np.count_nonzero(~np.isnan(data['Vince_zysk']))
 t_student_Vince_BH = Srednia_Vince_BH/np.sqrt(Wariancja_Vince_BH/Obserwacje)
 pvalue_Vince_BH = 1-norm.cdf(t_student_Vince_BH)
-
-#Wyznacz zmienne porownujace Vince'a z tradingiem
-Srednia_Vince_TR = np.nanmean(data['Vince-TR'])
-Wariancja_Vince_TR = np.nanvar(data['Vince-TR'])
-t_student_Vince_TR = Srednia_Vince_TR/np.sqrt(Wariancja_Vince_TR/Obserwacje)
-pvalue_Vince_TR = 1-norm.cdf(t_student_Vince_TR)
 
 #######################Output#######################################
 
@@ -284,66 +255,50 @@ worksheet.set_column('A:A', 15)
 worksheet.set_column('B:B', 17)
 worksheet.set_column('C:C', 23)
 worksheet.set_column('D:D', 19)
-worksheet.set_column('E:E', 17)
-worksheet.set_column('F:F', 13)
-worksheet.set_column('G:G', 23)
-worksheet.set_column('H:H', 24)
+worksheet.set_column('E:E', 19)
+worksheet.set_column('F:F', 17)
+worksheet.set_column('G:G', 13)
+worksheet.set_column('H:H', 23)
+worksheet.set_column('I:I', 24)
 
 #Wypełnij nagłówki wiersz opisowych
 worksheet.write('A1', 'Nazwa')
 worksheet.write('B1', 'Parametr')
 worksheet.write('C1', 'Współczynnik korygujący')
-worksheet.write('D1', 'Początek obserwacji')
-worksheet.write('E1', 'Koniec obserwacji')
-worksheet.write('F1', 'Koniec nauki')
-worksheet.write('G1', 'Liczba transakcji uczących')
-worksheet.write('H1', 'Procent dni z EX dodatnim')
+worksheet.write('D1', 'Zonk')
+worksheet.write('E1', 'Początek obserwacji')
+worksheet.write('F1', 'Koniec obserwacji')
+worksheet.write('G1', 'Koniec nauki')
+worksheet.write('H1', 'Liczba transakcji uczących')
+worksheet.write('I1', 'Procent dni z EX dodatnim')
 
 #Wepełnij wartości opisowe
 worksheet.write('A2', 'MA')
 worksheet.write('B2', ind_par)
 worksheet.write('C2', wspolczynnik)
-worksheet.write('D2', data['Data'][0])
-worksheet.write('E2', data['Data'][ostatni_wiersz])
-worksheet.write('F2', nauka_koniec)
-worksheet.write('G2', liczba_transakcji)
-worksheet.write('H2', procent_EX_dodtni)
-
-#Wypełnij statystyki porównujące trading z kupuj i trzymaj
-worksheet.write('A4', 'TR-BH')
-worksheet.write('A5', 'Średnia')
-worksheet.write('B5', 'Wariancja')
-worksheet.write('C5', 't-student')
-worksheet.write('D5', 'p-value')
-worksheet.write('A6', Srednia_TR_BH)
-worksheet.write('B6', Wariancja_TR_BH)
-worksheet.write('C6', t_student_TR_BH)
-worksheet.write('D6', pvalue_TR_BH)
+worksheet.write('D2', zonk)
+worksheet.write('E2', data['Data'][0])
+worksheet.write('F2', data['Data'][ostatni_wiersz])
+worksheet.write('G2', nauka_koniec)
+worksheet.write('H2', liczba_transakcji)
+worksheet.write('I2', procent_EX_dodatni)
 
 #Wypełnij statystyki porównujące Vince'a z kupuj i trzymaj
-worksheet.write('A8', 'Vince-BH')
-worksheet.write('A9', 'Średnia')
-worksheet.write('B9', 'Wariancja')
-worksheet.write('C9', 't-student')
-worksheet.write('D9', 'p-value')
-worksheet.write('A10', Srednia_Vince_BH)
-worksheet.write('B10', Wariancja_Vince_BH)
-worksheet.write('C10', t_student_Vince_BH)
-worksheet.write('D10', pvalue_Vince_BH)
-
-#Wypełnij statystyki porównujące Vince'a z tradingiem
-worksheet.write('A12', 'Vince-TR')
-worksheet.write('A13', 'Średnia')
-worksheet.write('B13', 'Wariancja')
-worksheet.write('C13', 't-student')
-worksheet.write('D13', 'p-value')
-worksheet.write('A14', Srednia_Vince_TR)
-worksheet.write('B14', Wariancja_Vince_TR)
-worksheet.write('C14', t_student_Vince_TR)
-worksheet.write('D14', pvalue_Vince_TR)
-
+worksheet.write('A4', 'Vince-BH')
+worksheet.write('A5', 'Vince - średnia')
+worksheet.write('B5', 'Średnia')
+worksheet.write('C5', 'Wariancja')
+worksheet.write('D5', 't-student')
+worksheet.write('E5', 'p-value')
+worksheet.write('A6', sredni_Vince)
+worksheet.write('B6', Srednia_Vince_BH)
+worksheet.write('C6', Wariancja_Vince_BH)
+worksheet.write('D6', t_student_Vince_BH)
+worksheet.write('E6', pvalue_Vince_BH)
 
 workbook.close()
-"""
 
+y = pd.DataFrame(data)
+y.to_excel("output.xlsx")
 
+print(Obserwacje)
