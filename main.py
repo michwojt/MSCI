@@ -5,20 +5,22 @@ import datetime
 from scipy.stats import norm
 
 #Słownik z parametrami dla poszczególnych metod
-parameter_value = {'MA_20': 20, 'MA_50': 50, "MA_100": 100, 'MACD': 33, 'ROC': 50, 'RSI': 14}
+parameter_value = {'MA_20': 20, 'MA_50': 50, "MA_100": 100, 'MA_150': 150, 'MA_200': 200, 'MACD': 33, 'ROC': 50, 'RSI': 14}
 
 #Lista wartości współczynników korygujących, które będą testowane
-for wspolczynnik_zakres in [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]:
+#for wspolczynnik_zakres in [0.2, 0.5]:
+for wspolczynnik_zakres in [0.2]:
 
 #Pętla po metodach analizy technicznej
-    for ta_method in ['MA_20', 'MA_50', 'MA_100', 'MACD', 'ROC', 'RSI']:
+    #for ta_method in ['MA_20', 'MA_50', 'MA_100', 'MA_150', 'MA_200', 'MACD', 'ROC', 'RSI']:
+    for ta_method in ['MA_100']:
 
         # paramert indykatora
         ind_par = parameter_value[ta_method]
         ind_par_1=ind_par-1
         ind_par_2=ind_par-2
         #nauka_koniec='2015-03-27'wyznacz końcowy zakres przedziału pierwszej nauki zarządzania majątkiem
-        nauka_koniec='1990-12-31'
+        nauka_koniec='1994-12-30'
         wspolczynnik = wspolczynnik_zakres #parametr do obnizenia zaangazowania w dzwignie
 
         #Załaduj dane z transakcjami
@@ -68,7 +70,8 @@ for wspolczynnik_zakres in [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]:
         #######################NAUKA#######################################
 
 
-        #Zaiinicjuj kolumne z optymalnymi dzielnikami, wartością oczekiwaną i mnożnikiem dźwigni finansowej
+        #Zaiinicjuj kolumne z optymalnymi dzielnikami, wartością oczekiwaną, mnożnikiem dźwigni finansowej i zyskiem Vince'a
+        #przed zlogarytmowaniem
         data['max_strata'] = np.nan
         data['f_opt'] = np.nan
         data['Mnożnik'] = np.nan
@@ -179,6 +182,10 @@ for wspolczynnik_zakres in [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]:
         data['Vince'] = np.nan
         data['Vince-BH'] = np.nan
 
+        #Inicjuj kolumny do obliczenia BEC
+        data['Vince-BH_norm'] = np.nan
+        data['Mnożnik_BEC'] = np.nan
+
         #Zainicjuj zmienną badającą, czy doszło do bankructa
         zonk = 'nie'
 
@@ -198,7 +205,80 @@ for wspolczynnik_zakres in [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]:
                     else:
                         data['Vince'][i] = np.log(1+data['Vince_zysk'][i]) * 100
 
+                    #Wyznacz parametry do wyliczenia BEC
+                    data['Vince-BH_norm'][i] = data['Vince_zysk'][i] - data['Zrealizowany zysk'][i]
+                    data['Mnożnik_BEC'][i] = data['Mnożnik'][i]
+
                 data['Vince-BH'][i] = data['Vince'][i] - data['BH'][i]
+
+#######Sharp#######################
+
+        #Policz wartości dla Sharpe'a
+        data['BH_wealth'] = np.nan
+        data['Vince_wealth'] = np.nan
+        data['BH_w_prev'] = np.nan
+        data['Vince_w_prev'] = np.nan
+        data['Rf_m'] = np.nan
+        data['BH_m_yield'] = np.nan
+        data['Vince_m_yield'] = np.nan
+
+        #Zaiinicjuj wartości początkowe majątku dla policzenia Sharpea
+        data['BH_wealth'][test_init] = 100
+        data['Vince_wealth'][test_init] = 100
+        data['BH_w_prev'][test_init] = 100
+        data['Vince_w_prev'][test_init] = 100
+
+        #Wylicz wartości majątku w czasie
+        trans_end_1 = trans_end - 1
+        for i in range(test_start, trans_end):
+            prev = i - 1
+
+            #Policz majątek dla obu metod w wartościach bezwględnych
+            if data['Sprzedaj'][i] == 1:
+                data['BH_wealth'][i] = data['BH_wealth'][prev] * (1+data['Zrealizowany zysk'][i])
+                data['Vince_wealth'][i] = data['Vince_wealth'][prev] * (1+data['Vince_zysk'][i])
+            else:
+                data['BH_wealth'][i] = data['BH_wealth'][prev]
+                data['Vince_wealth'][i] = data['Vince_wealth'][prev]
+
+        #Policz wartości dla Sharpe'a: miesięczna stopę wolną od ryzyka, stopy zwrotu na koniec miesięca i majątek
+        #z końca zeszłego miesiąca
+        for i in range(test_start, trans_end_1):
+            prev = i - 1
+            next = i + 1
+
+            if data['Miesiąc'][i] != data['Miesiąc'][next]:
+                data['Rf_m'][i] = np.log((1+data['Rf'][i]/100)**(1/12))
+                data['BH_m_yield'][i] = np.log(data['BH_wealth'][i]/data['BH_w_prev'][prev])
+                data['Vince_m_yield'][i] = np.log(data['Vince_wealth'][i]/data['Vince_w_prev'][prev])
+                data['BH_w_prev'][i] = data['BH_wealth'][i]
+                data['Vince_w_prev'][i] = data['Vince_wealth'][i]
+            else:
+                data['BH_w_prev'][i] = data['BH_w_prev'][prev]
+                data['Vince_w_prev'][i] = data['Vince_w_prev'][prev]
+
+        #Policz wartości dla ostatniego dnia
+        for i in range(trans_end_1, trans_end):
+            prev = i - 1
+
+            data['Rf_m'][i] = np.log((1+data['Rf'][i]/100)**(1/12))
+            data['BH_m_yield'][i] = np.log(data['BH_wealth'][i]/data['BH_w_prev'][prev])
+            data['Vince_m_yield'][i] = np.log(data['Vince_wealth'][i]/data['Vince_w_prev'][prev])
+            data['BH_w_prev'][i] = data['BH_wealth'][i]
+            data['Vince_w_prev'][i] = data['Vince_wealth'][i]
+
+        #Policz wartości ze wzoru na Sharpe'a dla buy and hold i Vince'a
+        stopa_wolna = np.nanmean(data['Rf_m'])
+        BH_srednia_Sharp = np.nanmean(data['BH_m_yield'])
+        Vince_srednia_Sharp = np.nanmean(data['Vince_m_yield'])
+        BH_SD_Sharp = np.sqrt(np.nanvar(data['BH_m_yield']))
+        Vince_SD_Sharp = np.sqrt(np.nanvar(data['Vince_m_yield']))
+
+        #Policz wskaźniki Sharpe'a
+        sharp_BH = (BH_srednia_Sharp-stopa_wolna)/BH_SD_Sharp
+        sharp_Vince = (Vince_srednia_Sharp-stopa_wolna)/Vince_SD_Sharp
+
+ #########Pozostałe statystyki podsumujące###################
 
         #Policz jaki procent obserwacji kwalifikuje sie do stosowania dzwigni
         procent_EX_dodatni = np.count_nonzero(~np.isnan(data['f_opt']))/(trans_end-test_init) * 100
@@ -211,6 +291,9 @@ for wspolczynnik_zakres in [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]:
         Obserwacje = np.count_nonzero(~np.isnan(data['Vince_zysk']))
         t_student_Vince_BH = Srednia_Vince_BH/np.sqrt(Wariancja_Vince_BH/Obserwacje)
         pvalue_Vince_BH = 1-norm.cdf(t_student_Vince_BH)
+
+        #Policz dodatkowe statystki
+        BEC = np.nanmean(data['Vince-BH_norm'])/np.nanmean(data['Mnożnik_BEC']) * 100
 
         #######################Output#######################################
 
@@ -267,9 +350,31 @@ for wspolczynnik_zakres in [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]:
         worksheet.write('D6', t_student_Vince_BH)
         worksheet.write('E6', pvalue_Vince_BH)
 
+        #Wypełnij dodatkowe statystyki
+        worksheet.write('A8', 'BEC')
+        worksheet.write('A9', BEC)
+        worksheet.write('B8', 'Sharp_BH')
+        worksheet.write('B9', sharp_BH)
+        worksheet.write('C8', 'Sharp_Vince')
+        worksheet.write('C9', sharp_Vince)
+
         workbook.close()
 
-     #   y = pd.DataFrame(data)
-     #  y.to_excel("output.xlsx")
+        #Usun zbędne kolumny
+        del data['Vince-BH_norm']
+        del data['Mnożnik_BEC']
+        del data['Cena kupna']
+        del data['Skumulowane odsetki']
+        del data['Unnamed: 0']
+        del data['Indicator']
+        del data['max_strata']
+        del data['f_opt']
+        del data['Mnożnik']
+        del data['BH']
+        del data['Vince']
+        del data['Vince-BH']
+
+        y = pd.DataFrame(data)
+        y.to_excel("output.xlsx")
 
 
