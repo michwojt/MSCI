@@ -4,7 +4,7 @@ import xlsxwriter
 import datetime
 import pandas_ta as ta
 
-"""
+
 ######MA 20#################
 
 ind_par = 20 #paramert indykatora
@@ -65,6 +65,16 @@ for i in range(ind_par,trans_end):
 #Jeśli na koniec trzymam mam otwartą pozycję to ją zamykam
 if data['Trzymaj'][ostatni_wiersz] == 1:
     data['Sprzedaj'][ostatni_wiersz] == 1
+
+#Zainicjuj kolumny wykorzystywane do BEC i Sharpe'a
+data['Miesiąc'] = np.nan
+data['Rok'] = np.nan
+
+#Wyciągnij informacje na temat roku i miesiąca
+
+for i in range(ind_par,trans_end):
+    data['Rok'][i] = data['Data'][i][0:4]
+    data['Miesiąc'][i] = data['Data'][i][5:7]
 
 y = pd.DataFrame(data)
 y.to_excel("./transakcje_input/MA_20.xlsx")
@@ -129,6 +139,16 @@ for i in range(ind_par,trans_end):
 #Jeśli na koniec trzymam mam otwartą pozycję to ją zamykam
 if data['Trzymaj'][ostatni_wiersz] == 1:
     data['Sprzedaj'][ostatni_wiersz] == 1
+
+#Zainicjuj kolumny wykorzystywane do BEC i Sharpe'a
+data['Miesiąc'] = np.nan
+data['Rok'] = np.nan
+
+#Wyciągnij informacje na temat roku i miesiąca
+
+for i in range(ind_par,trans_end):
+    data['Rok'][i] = data['Data'][i][0:4]
+    data['Miesiąc'][i] = data['Data'][i][5:7]
 
 y = pd.DataFrame(data)
 y.to_excel("./transakcje_input/MA_50.xlsx")
@@ -195,10 +215,20 @@ for i in range(ind_par,trans_end):
 if data['Trzymaj'][ostatni_wiersz] == 1:
     data['Sprzedaj'][ostatni_wiersz] == 1
 
+#Zainicjuj kolumny wykorzystywane do BEC i Sharpe'a
+data['Miesiąc'] = np.nan
+data['Rok'] = np.nan
+
+#Wyciągnij informacje na temat roku i miesiąca
+
+for i in range(ind_par,trans_end):
+    data['Rok'][i] = data['Data'][i][0:4]
+    data['Miesiąc'][i] = data['Data'][i][5:7]
+
 y = pd.DataFrame(data)
 y.to_excel("./transakcje_input/MA_100.xlsx")
 
-"""
+
 ######MA 150#################
 
 ind_par = 150 #paramert indykatora
@@ -258,6 +288,16 @@ for i in range(ind_par,trans_end):
 #Jeśli na koniec trzymam mam otwartą pozycję to ją zamykam
 if data['Trzymaj'][ostatni_wiersz] == 1:
     data['Sprzedaj'][ostatni_wiersz] == 1
+
+#Zainicjuj kolumny wykorzystywane do BEC i Sharpe'a
+data['Miesiąc'] = np.nan
+data['Rok'] = np.nan
+
+#Wyciągnij informacje na temat roku i miesiąca
+
+for i in range(ind_par,trans_end):
+    data['Rok'][i] = data['Data'][i][0:4]
+    data['Miesiąc'][i] = data['Data'][i][5:7]
 
 y = pd.DataFrame(data)
 y.to_excel("./transakcje_input/MA_150.xlsx")
@@ -322,11 +362,21 @@ for i in range(ind_par,trans_end):
 if data['Trzymaj'][ostatni_wiersz] == 1:
     data['Sprzedaj'][ostatni_wiersz] == 1
 
+#Zainicjuj kolumny wykorzystywane do BEC i Sharpe'a
+data['Miesiąc'] = np.nan
+data['Rok'] = np.nan
+
+#Wyciągnij informacje na temat roku i miesiąca
+
+for i in range(ind_par,trans_end):
+    data['Rok'][i] = data['Data'][i][0:4]
+    data['Miesiąc'][i] = data['Data'][i][5:7]
+
 y = pd.DataFrame(data)
 y.to_excel("./transakcje_input/MA_200.xlsx")
 
 
-"""
+
 
 
 ######MACD#################
@@ -394,6 +444,16 @@ if data['Trzymaj'][ostatni_wiersz] == 1:
     data['Sprzedaj'][ostatni_wiersz] == 1
 
 
+#Zainicjuj kolumny wykorzystywane do BEC i Sharpe'a
+data['Miesiąc'] = np.nan
+data['Rok'] = np.nan
+
+#Wyciągnij informacje na temat roku i miesiąca
+
+for i in range(ind_par,trans_end):
+    data['Rok'][i] = data['Data'][i][0:4]
+    data['Miesiąc'][i] = data['Data'][i][5:7]
+
 y = pd.DataFrame(data)
 y.to_excel("./transakcje_input/MACD.xlsx")
 
@@ -459,6 +519,16 @@ for i in range(trans_start,trans_end):
 #Jeśli na koniec trzymam mam otwartą pozycję to ją zamykam
 if data['Trzymaj'][ostatni_wiersz] == 1:
     data['Sprzedaj'][ostatni_wiersz] == 1
+
+#Zainicjuj kolumny wykorzystywane do BEC i Sharpe'a
+data['Miesiąc'] = np.nan
+data['Rok'] = np.nan
+
+#Wyciągnij informacje na temat roku i miesiąca
+
+for i in range(ind_par,trans_end):
+    data['Rok'][i] = data['Data'][i][0:4]
+    data['Miesiąc'][i] = data['Data'][i][5:7]
 
 y = pd.DataFrame(data)
 y.to_excel("./transakcje_input/RSI.xlsx")
@@ -526,7 +596,16 @@ for i in range(trans_start,trans_end):
 if data['Trzymaj'][ostatni_wiersz] == 1:
     data['Sprzedaj'][ostatni_wiersz] == 1
 
+#Zainicjuj kolumny wykorzystywane do BEC i Sharpe'a
+data['Miesiąc'] = np.nan
+data['Rok'] = np.nan
+
+#Wyciągnij informacje na temat roku i miesiąca
+
+for i in range(ind_par,trans_end):
+    data['Rok'][i] = data['Data'][i][0:4]
+    data['Miesiąc'][i] = data['Data'][i][5:7]
+
 y = pd.DataFrame(data)
 y.to_excel("./transakcje_input/ROC.xlsx")
 
-"""
