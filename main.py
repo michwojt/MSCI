@@ -8,19 +8,17 @@ from scipy.stats import norm
 parameter_value = {'MA_20': 20, 'MA_50': 50, "MA_100": 100, 'MA_150': 150, 'MA_200': 200, 'MACD': 33, 'ROC': 50, 'RSI': 14}
 
 #Lista wartości współczynników korygujących, które będą testowane
-#for wspolczynnik_zakres in [0.2, 0.5]:
-for wspolczynnik_zakres in [0.2]:
+for wspolczynnik_zakres in [0.2, 0.5]:
 
 #Pętla po metodach analizy technicznej
-    #for ta_method in ['MA_20', 'MA_50', 'MA_100', 'MA_150', 'MA_200', 'MACD', 'ROC', 'RSI']:
-    for ta_method in ['MA_100']:
+    for ta_method in ['MA_20', 'MA_50', 'MA_100', 'MA_150', 'MA_200', 'MACD', 'ROC', 'RSI']:
 
         # paramert indykatora
         ind_par = parameter_value[ta_method]
         ind_par_1=ind_par-1
         ind_par_2=ind_par-2
         #nauka_koniec='2015-03-27'wyznacz końcowy zakres przedziału pierwszej nauki zarządzania majątkiem
-        nauka_koniec='1994-12-30'
+        nauka_koniec='1992-12-31'
         wspolczynnik = wspolczynnik_zakres #parametr do obnizenia zaangazowania w dzwignie
 
         #Załaduj dane z transakcjami
@@ -164,7 +162,7 @@ for wspolczynnik_zakres in [0.2]:
                     data['Mnożnik'][i] = data['Mnożnik'][prev]
 
         #Policz skumulowane odsetki i zysk z metody Vince'a
-        for i in range(test_start,trans_end):
+        for i in range(test_init,trans_end):
             prev = i - 1
             if  data['Kupuj'][i] == 1:
                 data['Skumulowane odsetki'][i] = data['Rf'][i]/260
@@ -234,7 +232,7 @@ for wspolczynnik_zakres in [0.2]:
             prev = i - 1
 
             #Policz majątek dla obu metod w wartościach bezwględnych
-            if data['Sprzedaj'][i] == 1:
+            if data['Sprzedaj'][i] == 1 and data['f_opt'][i] > 0 :
                 data['BH_wealth'][i] = data['BH_wealth'][prev] * (1+data['Zrealizowany zysk'][i])
                 data['Vince_wealth'][i] = data['Vince_wealth'][prev] * (1+data['Vince_zysk'][i])
             else:
@@ -243,6 +241,7 @@ for wspolczynnik_zakres in [0.2]:
 
         #Policz wartości dla Sharpe'a: miesięczna stopę wolną od ryzyka, stopy zwrotu na koniec miesięca i majątek
         #z końca zeszłego miesiąca
+
         for i in range(test_start, trans_end_1):
             prev = i - 1
             next = i + 1
@@ -361,8 +360,8 @@ for wspolczynnik_zakres in [0.2]:
         workbook.close()
 
         #Usun zbędne kolumny
-        del data['Vince-BH_norm']
-        del data['Mnożnik_BEC']
+        #del data['Vince-BH_norm']
+        #del data['Mnożnik_BEC']
         del data['Cena kupna']
         del data['Skumulowane odsetki']
         del data['Unnamed: 0']
@@ -372,7 +371,7 @@ for wspolczynnik_zakres in [0.2]:
         del data['Mnożnik']
         del data['BH']
         del data['Vince']
-        del data['Vince-BH']
+       # del data['Vince-BH']
 
         y = pd.DataFrame(data)
         y.to_excel("output.xlsx")
