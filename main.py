@@ -153,7 +153,7 @@ for wspolczynnik_zakres in [0.2, 0.5]:
                 f_opt = nauka(liczba_transakcji, prawd, transakcje_nauka, max_strata)
 
         #Jesli wartosc oczekiwana jest dodatnia to przypisuje optymalne f
-            if  EX > 0:
+            if  EX > 0 and f_opt > 0:
                 data['f_opt'][i] = f_opt
                 data['max_strata'][i]  = max_strata
 
