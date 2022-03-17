@@ -9,16 +9,18 @@ parameter_value = {'MA_20': 20, 'MA_50': 50, "MA_100": 100, 'MA_150': 150, 'MA_2
 
 #Lista wartości współczynników korygujących, które będą testowane
 for wspolczynnik_zakres in [0.2, 0.5]:
+#for wspolczynnik_zakres in [0.2]:
 
 #Pętla po metodach analizy technicznej
     for ta_method in ['MA_20', 'MA_50', 'MA_100', 'MA_150', 'MA_200', 'MACD', 'ROC', 'RSI']:
+#    for ta_method in ['MA_20']:
 
         # paramert indykatora
         ind_par = parameter_value[ta_method]
         ind_par_1=ind_par-1
         ind_par_2=ind_par-2
         #nauka_koniec='2015-03-27'wyznacz końcowy zakres przedziału pierwszej nauki zarządzania majątkiem
-        nauka_koniec='1992-12-31'
+        nauka_koniec='1994-12-30'
         wspolczynnik = wspolczynnik_zakres #parametr do obnizenia zaangazowania w dzwignie
 
         #Załaduj dane z transakcjami
@@ -277,6 +279,47 @@ for wspolczynnik_zakres in [0.2, 0.5]:
         sharp_BH = (BH_srednia_Sharp-stopa_wolna)/BH_SD_Sharp
         sharp_Vince = (Vince_srednia_Sharp-stopa_wolna)/Vince_SD_Sharp
 
+        def podokresy(start, koniec):
+
+            licznik_okes = 0
+            ruina_okres = 'nie'
+            Vince_BH_okres = 0
+            Mnożnik_okres = 0
+
+            for i in range(test_init, trans_end):
+                if data['Rok'][i] > start and data['Rok'][i] < koniec:
+                    if ~np.isnan(data['Vince_zysk'][i]):
+                        if data['Vince'][i] == -10000000:
+                            ruina_okres = 'tak'
+                        else:
+                            licznik_okes += 1
+                            Vince_BH_okres += data['Vince-BH_norm'][i]
+                            Mnożnik_okres += data['Mnożnik_BEC'][i]
+
+
+
+
+            if licznik_okes > 0:
+                BEC_okres = (Vince_BH_okres/licznik_okes)/(Mnożnik_okres/licznik_okes)
+            else:
+                BEC_okres = 'brak'
+
+            print(Vince_BH_okres)
+            print(licznik_okes)
+            print(Mnożnik_okres)
+
+            return BEC_okres, ruina_okres
+
+        #BEC_1990, ruina_1990 = podokresy(1985, 1996)
+        #BEC_1995, ruina_1995 = podokresy(1995, 2001)
+        #BEC_2000, ruina_2000 = podokresy(2000, 2006)
+        #BEC_2005, ruina_2005 = podokresy(2005, 2011)
+        #BEC_2010, ruina_2010 = podokresy(2010, 2016)
+        #BEC_2015, ruina_2015 = podokresy(2015, 2050)
+
+
+
+
  #########Pozostałe statystyki podsumujące###################
 
         #Policz jaki procent obserwacji kwalifikuje sie do stosowania dzwigni
@@ -357,6 +400,32 @@ for wspolczynnik_zakres in [0.2, 0.5]:
         worksheet.write('C8', 'Sharp_Vince')
         worksheet.write('C9', sharp_Vince)
 
+        #Wypełnij informacje o podokresach
+        #worksheet.write('A11', 'BEC_1990')
+        #worksheet.write('A12', BEC_1990)
+        #worksheet.write('B11', 'ruina_1990')
+        #worksheet.write('B12', ruina_1990)
+        #worksheet.write('C11', 'BEC_1995')
+        #worksheet.write('C12', BEC_1995)
+        #worksheet.write('D11', 'ruina_1995')
+        #worksheet.write('D12', ruina_1995)
+        #worksheet.write('E11', 'BEC_2000')
+        #worksheet.write('E12', BEC_2000)
+        #worksheet.write('F11', 'ruina_2000')
+        #worksheet.write('F12', ruina_2000)
+        #worksheet.write('G11', 'BEC_2005')
+        #worksheet.write('G12', BEC_2005)
+       #worksheet.write('H11', 'ruina_2005')
+        #worksheet.write('H12', ruina_2005)
+        #worksheet.write('I11', 'BEC_2010')
+        #worksheet.write('I12', BEC_2010)
+        #worksheet.write('J11', 'ruina_2010')
+        #worksheet.write('J12', ruina_2010)
+        #worksheet.write('A14', 'BEC_2015')
+        #worksheet.write('A15', BEC_2015)
+        #worksheet.write('B14', 'ruina_2015')
+        #worksheet.write('B15', ruina_2015)
+
         workbook.close()
 
         #Usun zbędne kolumny
@@ -367,11 +436,11 @@ for wspolczynnik_zakres in [0.2, 0.5]:
         del data['Unnamed: 0']
         del data['Indicator']
         del data['max_strata']
-        del data['f_opt']
+        #del data['f_opt']
         del data['Mnożnik']
         del data['BH']
         del data['Vince']
-       # del data['Vince-BH']
+        #del data['Vince-BH']
 
         y = pd.DataFrame(data)
         y.to_excel("output.xlsx")
